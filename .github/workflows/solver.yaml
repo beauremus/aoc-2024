@@ -85,12 +85,13 @@ jobs:
         # Append input type to solution output for clarity
         echo "Running Day $AOC_DAY with $AOC_INPUT_TYPE input" > run_log.txt
         
-        sqlite3 :memory: <<EOF >> run_log.txt
-        .mode csv
+        # Use a separate SQL script to run the solution
+        echo ".mode csv
         .import input.txt input
         .read solve.sql
-        .exit
-EOF
+        .quit" > run.sql
+        
+        sqlite3 :memory: < run.sql >> run_log.txt 2>&1
         
         cat run_log.txt
     
