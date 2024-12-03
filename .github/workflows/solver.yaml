@@ -1,0 +1,118 @@
+name: Advent of Code Solution
+
+on:
+  push:
+    paths:
+      - 'day*/solve.sql'
+  pull_request:
+    paths:
+      - 'day*/solve.sql'
+  workflow_dispatch:
+    inputs:
+      day:
+        description: 'Day of Advent of Code (1-25)'
+        required: true
+        default: '1'
+      input_type:
+        description: 'Input type (test/actual)'
+        required: true
+        default: 'test'
+
+env:
+  AOC_YEAR: 2024
+  AOC_SESSION: ${{ secrets.AOC_SESSION_COOKIE }}
+
+jobs:
+  solve:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set Day
+      id: set-day
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          DAY="${{ github.event.inputs.day }}"
+        else
+          # Extract day from changed file path
+          DAY=$(echo "${{ github.event.path }}" | grep -oP 'day\K\d+')
+        fi
+        
+        # Pad single-digit days with zero
+        FORMATTED_DAY=$(printf "%02d" $DAY)
+        echo "day=$FORMATTED_DAY" >> $GITHUB_OUTPUT
+    
+    - name: Determine Input Type
+      id: input-type
+      run: |
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "type=test" >> $GITHUB_OUTPUT
+        elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          echo "type=${{ github.event.inputs.input_type }}" >> $GITHUB_OUTPUT
+        else
+          echo "type=actual" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Fetch Puzzle Input
+      env:
+        AOC_INPUT_TYPE: ${{ steps.input-type.outputs.type }}
+        AOC_DAY: ${{ steps.set-day.outputs.day }}
+      run: |
+        # Create day directory if not exists
+        mkdir -p day$AOC_DAY
+        
+        if [[ "$AOC_INPUT_TYPE" == "test" ]]; then
+          # For test input, you can manually add or generate it
+          echo "Test input placeholder for Day $AOC_DAY" > day$AOC_DAY/input.txt
+        else
+          # Fetch actual puzzle input
+          curl -s 'https://adventofcode.com/'$AOC_YEAR'/day/'$(echo $AOC_DAY | sed 's/^0*//')/input \
+            --cookie "session=$AOC_SESSION" \
+            > day$AOC_DAY/input.txt
+        fi
+    
+    - name: Install SQLite
+      run: sudo apt-get update && sudo apt-get install -y sqlite3
+    
+    - name: Solve Advent of Code Challenge
+      env:
+        AOC_INPUT_TYPE: ${{ steps.input-type.outputs.type }}
+        AOC_DAY: ${{ steps.set-day.outputs.day }}
+      run: |
+        cd day$AOC_DAY
+        
+        # Append input type to solution output for clarity
+        echo "Running Day $AOC_DAY with $AOC_INPUT_TYPE input" > run_log.txt
+        
+        sqlite3 :memory: <<EOF >> run_log.txt
+        .mode csv
+        .import input.txt input
+        .read solve.sql
+        .exit
+EOF
+        
+        cat run_log.txt
+    
+    - name: Check Solution
+      env:
+        AOC_INPUT_TYPE: ${{ steps.input-type.outputs.type }}
+      run: |
+        cd day$AOC_DAY
+        
+        # Different validation for test vs actual input
+        if [[ "$AOC_INPUT_TYPE" == "test" ]]; then
+          # Add test-specific validation
+          if grep -q "Test Passed" run_log.txt; then
+            echo "Test passed successfully!"
+          else
+            echo "Test failed"
+            exit 1
+          fi
+        fi
+    
+    - name: Upload Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: day${{ steps.set-day.outputs.day }}-${{ steps.input-type.outputs.type }}-results
+        path: day${{ steps.set-day.outputs.day }}/run_log.txt
