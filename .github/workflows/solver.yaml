@@ -36,7 +36,7 @@ jobs:
           DAY="${{ github.event.inputs.day }}"
         else
           # Extract day from changed file path
-          DAY=$(echo "${{ github.event.path }}" | grep -oP 'day\K\d+')
+          DAY=$(echo "${{ github.event.path }}" | grep -oE 'day\K\d+')
         fi
         
         # Pad single-digit days with zero
