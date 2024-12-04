@@ -29,42 +29,18 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Debug Event Information
-      run: |
-        echo "GitHub Event Name: ${{ github.event_name }}"
-        echo "GitHub Event Path: ${{ github.event.path }}"
-        echo "Triggered Files:"
-        echo "${{ toJson(github.event.commits[0].added) }}"
-        echo "${{ toJson(github.event.commits[0].modified) }}"
-    
     - name: Set Day
       id: set-day
       run: |
-        # Default to 1 if not specified
-        DAY=1
-        
-        # Handle workflow dispatch
         if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
           DAY="${{ github.event.inputs.day }}"
-        
-        # Handle push event
-        elif [[ "${{ github.event_name }}" == "push" ]]; then
-          # Try to extract day from modified or added files
-          CHANGED_FILES="${{ toJson(github.event.commits[0].added) }} ${{ toJson(github.event.commits[0].modified) }}"
-          DAY=$(echo "$CHANGED_FILES" | grep -oP 'day\K\d+' | head -n 1)
-        
-        # Handle pull request
-        elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
-          DAY=$(echo "${{ github.event.pull_request.head.ref }}" | grep -oP 'day\K\d+')
+        else
+          # Extract day from changed file path
+          DAY=$(echo "${{ github.event.path }}" | grep -oP 'day\K\d+')
         fi
-        
-        # Fallback to 1 if no day found
-        DAY=${DAY:-1}
         
         # Pad single-digit days with zero
         FORMATTED_DAY=$(printf "%02d" $DAY)
-        
-        echo "Extracted Day: $FORMATTED_DAY"
         echo "day=$FORMATTED_DAY" >> $GITHUB_OUTPUT
     
     - name: Determine Input Type
@@ -98,6 +74,16 @@ jobs:
     
     - name: Install SQLite
       run: sudo apt-get update && sudo apt-get install -y sqlite3
+
+    - name: Debug Workflow Context
+      env:
+        AOC_DAY: ${{ steps.set-day.outputs.day }}
+      run: |
+        echo "Working directory: $(pwd)"
+        echo "Day directory contents:"
+        ls -la day$AOC_DAY
+        cat day$AOC_DAY/input.txt
+        cat day$AOC_DAY/solve.sql || echo "solve.sql not found"
     
     - name: Solve Advent of Code Challenge
       env:
@@ -108,6 +94,12 @@ jobs:
         
         # Append input type to solution output for clarity
         echo "Running Day $AOC_DAY with $AOC_INPUT_TYPE input" > run_log.txt
+
+        # Verify solve.sql exists
+        if [ ! -f solve.sql ]; then
+          echo "Error: solve.sql not found"
+          exit 1
+        fi
         
         # Use a separate SQL script to run the solution
         echo ".mode csv
