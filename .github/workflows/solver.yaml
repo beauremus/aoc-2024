@@ -36,7 +36,7 @@ jobs:
           DAY="${{ github.event.inputs.day }}"
         else
           # Extract day from changed file path
-          DAY=$(echo "${{ github.event.path }}" | grep -oP 'day\K\d+')
+          DAY=$(echo "${{ github.event.path }}" | grep -oE 'day\K\d+')
         fi
         
         # Pad single-digit days with zero
@@ -74,6 +74,16 @@ jobs:
     
     - name: Install SQLite
       run: sudo apt-get update && sudo apt-get install -y sqlite3
+
+    - name: Debug Workflow Context
+      env:
+        AOC_DAY: ${{ steps.set-day.outputs.day }}
+      run: |
+        echo "Working directory: $(pwd)"
+        echo "Day directory contents:"
+        ls -la day$AOC_DAY
+        cat day$AOC_DAY/input.txt
+        cat day$AOC_DAY/solve.sql || echo "solve.sql not found"
     
     - name: Solve Advent of Code Challenge
       env:
@@ -84,6 +94,12 @@ jobs:
         
         # Append input type to solution output for clarity
         echo "Running Day $AOC_DAY with $AOC_INPUT_TYPE input" > run_log.txt
+
+        # Verify solve.sql exists
+        if [ ! -f solve.sql ]; then
+          echo "Error: solve.sql not found"
+          exit 1
+        fi
         
         # Use a separate SQL script to run the solution
         echo ".mode csv
