@@ -7,13 +7,13 @@ CREATE TABLE input (
 );
 
 -- Solve Part 1: Calculating differences
-WITH sorted_data AS (
-    SELECT 
-        -- Parse input into columns
-        CAST(SUBSTR(value, 1, INSTR(value, ' ') - 1) AS INTEGER) AS col1,
-        CAST(SUBSTR(value, INSTR(value, ' ') + 1) AS INTEGER) AS col2
-    FROM input
-);
+-- WITH sorted_data AS (
+SELECT 
+    -- Parse input into columns
+    CAST(SUBSTR(value, 1, INSTR(value, ' ') - 1) AS INTEGER) AS col1,
+    CAST(SUBSTR(value, INSTR(value, ' ') + 1) AS INTEGER) AS col2
+FROM input;
+-- ),
 -- sorted_cols AS (
 --     SELECT 
 --         col1 AS min_col, 
