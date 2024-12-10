@@ -1,3 +1,6 @@
+-- Drop the table if it exists before creating or importing
+DROP TABLE IF EXISTS input;
+
 -- Flexible input handling
 CREATE TABLE input (
     value TEXT
