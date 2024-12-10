@@ -1,27 +1,35 @@
--- Drop the table if it exists before creating or importing
+-- Ensure clean slate
 DROP TABLE IF EXISTS input;
 
--- Flexible input handling
+-- Create input table
 CREATE TABLE input (
     value TEXT
 );
 
--- Example solution with test validation
-WITH processed_data AS (
+-- Solve Part 1: Calculating differences
+WITH sorted_data AS (
     SELECT 
-        CAST(value AS INTEGER) AS numeric_value
+        -- Parse input into columns
+        CAST(SUBSTR(value, 1, INSTR(value, ' ') - 1) AS INTEGER) AS col1,
+        CAST(SUBSTR(value, INSTR(value, ' ') + 1) AS INTEGER) AS col2
     FROM input
 ),
-solution AS (
+sorted_cols AS (
     SELECT 
-        SUM(numeric_value) AS result
-    FROM processed_data
+        col1 AS min_col, 
+        col2 AS max_col
+    FROM sorted_data
+    ORDER BY col1, col2
+),
+differences AS (
+    SELECT 
+        max_col - min_col AS row_diff
+    FROM sorted_cols
 )
 SELECT 
-    result,
+    SUM(row_diff) AS solution,
     CASE 
-        -- Test input validation (adjust expected value)
-        WHEN result = 42 THEN 'Test Passed: Expected result found'
+        WHEN SUM(row_diff) = 11 THEN 'Test Passed: Expected result found'
         ELSE 'Solution computed'
     END AS validation
-FROM solution;
+FROM differences;
