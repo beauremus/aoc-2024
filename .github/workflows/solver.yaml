@@ -1,12 +1,6 @@
 name: Advent of Code Solution
 
 on:
-  push:
-    paths:
-      - 'day*/solve.sql'
-  pull_request:
-    paths:
-      - 'day*/solve.sql'
   workflow_dispatch:
     inputs:
       day:
