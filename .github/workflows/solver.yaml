@@ -90,25 +90,34 @@ jobs:
         AOC_INPUT_TYPE: ${{ steps.input-type.outputs.type }}
         AOC_DAY: ${{ steps.set-day.outputs.day }}
       run: |
+        echo day$AOC_DAY
         cd day$AOC_DAY
         
         # Append input type to solution output for clarity
+        echo "Running Day $AOC_DAY with $AOC_INPUT_TYPE input"
         echo "Running Day $AOC_DAY with $AOC_INPUT_TYPE input" > run_log.txt
 
+        echo "Testing solve.sql existence"
         # Verify solve.sql exists
         if [ ! -f solve.sql ]; then
           echo "Error: solve.sql not found"
           exit 1
         fi
         
+        echo ".mode csv
+        .import input.txt input
+        .read solve.sql
+        .quit"
         # Use a separate SQL script to run the solution
         echo ".mode csv
         .import input.txt input
         .read solve.sql
         .quit" > run.sql
         
+        echo "Running sqlite"
         sqlite3 :memory: < run.sql >> run_log.txt 2>&1
         
+        echo "Output"
         cat run_log.txt
     
     - name: Check Solution
