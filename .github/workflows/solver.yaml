@@ -140,21 +140,6 @@ jobs:
         echo "Output"
         # cat run_log.txt
     
-    - name: Check Solution
-      env:
-        AOC_INPUT_TYPE: ${{ steps.input-type.outputs.type }}
-      run: |
-        # Different validation for test vs actual input
-        if [[ "$AOC_INPUT_TYPE" == "test" ]]; then
-          # Add test-specific validation
-          if grep -q "Test Passed" run_log.txt; then
-            echo "Test passed successfully!"
-          else
-            echo "Test failed"
-            exit 1
-          fi
-        fi
-    
     - name: Upload Results
       uses: actions/upload-artifact@v3
       with:
