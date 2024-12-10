@@ -144,8 +144,6 @@ jobs:
       env:
         AOC_INPUT_TYPE: ${{ steps.input-type.outputs.type }}
       run: |
-        cd day$AOC_DAY
-        
         # Different validation for test vs actual input
         if [[ "$AOC_INPUT_TYPE" == "test" ]]; then
           # Add test-specific validation
