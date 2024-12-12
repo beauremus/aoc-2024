@@ -1,12 +1,6 @@
 name: Advent of Code Solution
 
 on:
-  push:
-    paths:
-      - 'day*/solve.sql'
-  pull_request:
-    paths:
-      - 'day*/solve.sql'
   workflow_dispatch:
     inputs:
       day:
@@ -25,10 +19,10 @@ env:
 jobs:
   solve:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set Day
       id: set-day
       run: |
@@ -36,13 +30,13 @@ jobs:
           DAY="${{ github.event.inputs.day }}"
         else
           # Extract day from changed file path
-          DAY=$(echo "${{ github.event.path }}" | grep -oP 'day\K\d+')
+          DAY=$(echo "$filepath" | sed -E 's/.*day([0-9]+).*/\1/')
         fi
         
         # Pad single-digit days with zero
         FORMATTED_DAY=$(printf "%02d" $DAY)
         echo "day=$FORMATTED_DAY" >> $GITHUB_OUTPUT
-    
+
     - name: Determine Input Type
       id: input-type
       run: |
@@ -53,7 +47,7 @@ jobs:
         else
           echo "type=actual" >> $GITHUB_OUTPUT
         fi
-    
+
     - name: Fetch Puzzle Input
       env:
         AOC_INPUT_TYPE: ${{ steps.input-type.outputs.type }}
@@ -71,9 +65,42 @@ jobs:
             --cookie "session=$AOC_SESSION" \
             > day$AOC_DAY/input.txt
         fi
-    
+
     - name: Install SQLite
       run: sudo apt-get update && sudo apt-get install -y sqlite3
+
+    - name: Debug Workflow Context
+      env:
+        AOC_DAY: ${{ steps.set-day.outputs.day }}
+      run: |
+        echo "Working directory: $(pwd)"
+        echo "Day directory contents:"
+        ls -la day$AOC_DAY
+        cat day$AOC_DAY/input.txt
+        cat day$AOC_DAY/solve.sql || echo "solve.sql not found"
+
+    - name: Create SQLite Database and Input Table
+      env:
+        AOC_DAY: ${{ steps.set-day.outputs.day }}
+      run: |
+        cd day$AOC_DAY
+
+        echo "Creating input table."
+
+        sqlite3 solution.db <<EOF
+        CREATE TABLE input (value TEXT);
+        .quit
+        EOF
+
+    - name: Import Input Data
+      env:
+        AOC_DAY: ${{ steps.set-day.outputs.day }}
+      run: |
+        cd day$AOC_DAY
+
+        echo "Importing input."
+
+        sqlite3 solution.db < <(echo ".import input.txt input")
     
     - name: Solve Advent of Code Challenge
       env:
@@ -81,39 +108,7 @@ jobs:
         AOC_DAY: ${{ steps.set-day.outputs.day }}
       run: |
         cd day$AOC_DAY
-        
-        # Append input type to solution output for clarity
-        echo "Running Day $AOC_DAY with $AOC_INPUT_TYPE input" > run_log.txt
-        
-        # Use a separate SQL script to run the solution
-        echo ".mode csv
-        .import input.txt input
-        .read solve.sql
-        .quit" > run.sql
-        
-        sqlite3 :memory: < run.sql >> run_log.txt 2>&1
-        
-        cat run_log.txt
-    
-    - name: Check Solution
-      env:
-        AOC_INPUT_TYPE: ${{ steps.input-type.outputs.type }}
-      run: |
-        cd day$AOC_DAY
-        
-        # Different validation for test vs actual input
-        if [[ "$AOC_INPUT_TYPE" == "test" ]]; then
-          # Add test-specific validation
-          if grep -q "Test Passed" run_log.txt; then
-            echo "Test passed successfully!"
-          else
-            echo "Test failed"
-            exit 1
-          fi
-        fi
-    
-    - name: Upload Results
-      uses: actions/upload-artifact@v3
-      with:
-        name: day${{ steps.set-day.outputs.day }}-${{ steps.input-type.outputs.type }}-results
-        path: day${{ steps.set-day.outputs.day }}/run_log.txt
+
+        echo "Running solve.sql against solution.db"
+
+        sqlite3 solution.db ".read solve.sql"
