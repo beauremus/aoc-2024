@@ -18,10 +18,7 @@ env:
 
 jobs:
   solve:
-    runs-on: ubuntu-latest # Needed for checkout
-
-    container:
-      image: debian:stable-slim
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v3
@@ -70,7 +67,7 @@ jobs:
         fi
 
     - name: Install SQLite
-      run: apt-get update && apt-get install -y sqlite3
+      run: sudo apt-get update && sudo apt-get install -y sqlite3
 
     - name: Debug Workflow Context
       env:
