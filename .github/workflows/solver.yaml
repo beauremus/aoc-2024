@@ -30,7 +30,6 @@ jobs:
           DAY="${{ github.event.inputs.day }}"
         else
           # Extract day from changed file path
-          # DAY=$(echo "${{ github.event.path }}" | grep -oE 'day\K\d+')
           DAY=$(echo "$filepath" | sed -E 's/.*day([0-9]+).*/\1/')
         fi
         
@@ -79,59 +78,43 @@ jobs:
         ls -la day$AOC_DAY
         cat day$AOC_DAY/input.txt
         cat day$AOC_DAY/solve.sql || echo "solve.sql not found"
+
+    - name: Create SQLite Database and Input Table
+      env:
+        AOC_DAY: ${{ steps.set-day.outputs.day }}
+      run: |
+        cd day$AOC_DAY
+
+        echo "Creating input table." > run_log.txt
+
+        sqlite3 solution.db <<EOF
+        CREATE TABLE input (value TEXT);
+        .quit
+        EOF
+
+    - name: Import Input Data
+      env:
+        AOC_DAY: ${{ steps.set-day.outputs.day }}
+      run: |
+        cd day$AOC_DAY
+
+        echo "Importing input." >> run_log.txt
+        cat input.txt >> run_log.txt
+
+        sqlite3 solution.db < <(echo ".import input.txt input")
     
     - name: Solve Advent of Code Challenge
       env:
         AOC_INPUT_TYPE: ${{ steps.input-type.outputs.type }}
         AOC_DAY: ${{ steps.set-day.outputs.day }}
       run: |
-        echo day$AOC_DAY
         cd day$AOC_DAY
-        
-        # Append input type to solution output for clarity
-        echo "Running Day $AOC_DAY with $AOC_INPUT_TYPE input"
-        echo "Running Day $AOC_DAY with $AOC_INPUT_TYPE input" > run_log.txt
 
-        echo "Testing solve.sql existence"
-        # Verify solve.sql exists
-        if [ ! -f solve.sql ]; then
-          echo "Error: solve.sql not found"
-          exit 1
-        fi
-
-
-        # # Create verbose run script
-        # echo ".mode csv
-        # .headers on
-        # .echo on
-        # .import input.txt input
-        # .read solve.sql
-        # .quit" > verbose_run.sql
-        
-        # # Run with verbose output and capture all output
-        # sqlite3 -bail :memory: < verbose_run.sql || echo "SQLite script failed"
-        
-        # # Check the exit status
-        # exit_status=$?
-        # echo "SQLite Exit Status: $exit_status"
-        
-        # # Dump full error details
-        # if [ $exit_status -ne 0 ]; then
-        #   echo "Detailed error investigation:"
-        #   sqlite3 -bail :memory: < solve.sql || true
-        # fi
-
-
-        # Use a separate SQL script to run the solution
-        echo ".mode csv
-        .import input.txt input
-        .read solve.sql
-        .quit" > run.sql
+        echo "Running solve.sql against solution.db" >> run_log.txt
         
         echo "Running sqlite"
-        sqlite3 :memory: < run.sql >> run_log.txt 2>&1
+        sqlite3 solution.db < solve.sql >> run_log.txt 2>&1
         
-        echo "Output"
         cat run_log.txt
     
     - name: Upload Results
