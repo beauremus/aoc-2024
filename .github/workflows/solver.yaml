@@ -100,26 +100,26 @@ jobs:
         fi
 
 
-        # Create verbose run script
-        echo ".mode csv
-        .headers on
-        .echo on
-        .import input.txt input
-        .read solve.sql
-        .quit" > verbose_run.sql
+        # # Create verbose run script
+        # echo ".mode csv
+        # .headers on
+        # .echo on
+        # .import input.txt input
+        # .read solve.sql
+        # .quit" > verbose_run.sql
         
-        # Run with verbose output and capture all output
-        sqlite3 -bail :memory: < verbose_run.sql || echo "SQLite script failed"
+        # # Run with verbose output and capture all output
+        # sqlite3 -bail :memory: < verbose_run.sql || echo "SQLite script failed"
         
-        # Check the exit status
-        exit_status=$?
-        echo "SQLite Exit Status: $exit_status"
+        # # Check the exit status
+        # exit_status=$?
+        # echo "SQLite Exit Status: $exit_status"
         
-        # Dump full error details
-        if [ $exit_status -ne 0 ]; then
-          echo "Detailed error investigation:"
-          sqlite3 -bail :memory: < solve.sql || true
-        fi
+        # # Dump full error details
+        # if [ $exit_status -ne 0 ]; then
+        #   echo "Detailed error investigation:"
+        #   sqlite3 -bail :memory: < solve.sql || true
+        # fi
 
 
         # Use a separate SQL script to run the solution
@@ -129,10 +129,10 @@ jobs:
         .quit" > run.sql
         
         echo "Running sqlite"
-        # sqlite3 :memory: < run.sql >> run_log.txt 2>&1
+        sqlite3 :memory: < run.sql >> run_log.txt 2>&1
         
         echo "Output"
-        # cat run_log.txt
+        cat run_log.txt
     
     - name: Upload Results
       uses: actions/upload-artifact@v4
