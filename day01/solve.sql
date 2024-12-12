@@ -1,35 +1,34 @@
--- Ensure clean slate
-DROP TABLE IF EXISTS input;
-
--- Create input table
-CREATE TABLE input (
-    value TEXT
-);
-
 -- Solve Part 1: Calculating differences
--- WITH sorted_data AS (
+WITH sorted_data AS (
+    SELECT 
+        -- Parse input into columns
+        CAST(SUBSTR(value, 1, INSTR(value, '   ') - 1) AS INTEGER) AS col1,
+        CAST(SUBSTR(value, INSTR(value, '   ') + 1) AS INTEGER) AS col2
+    FROM input
+),
+sorted_col1 AS (
+    SELECT 
+        col1, 
+        ROW_NUMBER() OVER (ORDER BY col1) AS rn
+    FROM sorted_data
+),
+sorted_col2 AS (
+    SELECT 
+        col2, 
+        ROW_NUMBER() OVER (ORDER BY col2) AS rn
+    FROM sorted_data
+),
+differences AS (
+    SELECT 
+        sorted_col1.col1,
+        sorted_col2.col2,
+        sorted_col2.col2 - sorted_col1.col1 AS difference
+    FROM sorted_data
+)
 SELECT 
-    -- Parse input into columns
-    CAST(SUBSTR(value, 1, INSTR(value, ' ') - 1) AS INTEGER) AS col1,
-    CAST(SUBSTR(value, INSTR(value, ' ') + 1) AS INTEGER) AS col2
-FROM input;
--- ),
--- sorted_cols AS (
---     SELECT 
---         col1 AS min_col, 
---         col2 AS max_col
---     FROM sorted_data
---     ORDER BY col1, col2
--- ),
--- differences AS (
---     SELECT 
---         max_col - min_col AS row_diff
---     FROM sorted_cols
--- )
--- SELECT 
---     SUM(row_diff) AS solution,
---     CASE 
---         WHEN SUM(row_diff) = 11 THEN 'Test Passed: Expected result found'
---         ELSE 'Solution computed'
---     END AS validation
--- FROM differences;
+    SUM(difference) AS solution,
+    CASE 
+        WHEN SUM(difference) = 11 THEN 'Test Passed: Expected result found'
+        ELSE 'Solution computed'
+    END AS validation
+FROM differences;
