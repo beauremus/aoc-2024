@@ -22,7 +22,7 @@ differences AS (
     SELECT 
         sorted_col1.col1,
         sorted_col2.col2,
-        sorted_col2.col2 - sorted_col1.col1 AS difference
+        ABS(sorted_col2.col2 - sorted_col1.col1) AS difference
     FROM sorted_col1
     JOIN sorted_col2 ON sorted_col1.rn = sorted_col2.rn
 )
