@@ -85,7 +85,7 @@ jobs:
       run: |
         cd day$AOC_DAY
 
-        echo "Creating input table." > run_log.txt
+        echo "Creating input table."
 
         sqlite3 solution.db <<EOF
         CREATE TABLE input (value TEXT);
@@ -98,8 +98,8 @@ jobs:
       run: |
         cd day$AOC_DAY
 
-        echo "Importing input." >> run_log.txt
-        cat input.txt >> run_log.txt
+        echo "Importing input."
+        cat input.txt
 
         sqlite3 solution.db < <(echo ".import input.txt input")
     
@@ -110,15 +110,7 @@ jobs:
       run: |
         cd day$AOC_DAY
 
-        echo "Running solve.sql against solution.db" >> run_log.txt
+        echo "Running solve.sql against solution.db"
         
         echo "Running sqlite"
-        sqlite3 solution.db < solve.sql >> run_log.txt 2>&1
-        
-        cat run_log.txt
-    
-    - name: Upload Results
-      uses: actions/upload-artifact@v4
-      with:
-        name: day${{ steps.set-day.outputs.day }}-${{ steps.input-type.outputs.type }}-results
-        path: day${{ steps.set-day.outputs.day }}/run_log.txt
+        sqlite3 solution.db ".read solve.sql"
