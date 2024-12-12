@@ -135,7 +135,7 @@ jobs:
         # cat run_log.txt
     
     - name: Upload Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: day${{ steps.set-day.outputs.day }}-${{ steps.input-type.outputs.type }}-results
         path: day${{ steps.set-day.outputs.day }}/run_log.txt
