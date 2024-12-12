@@ -18,11 +18,15 @@ env:
 
 jobs:
   solve:
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-latest # Needed for checkout
+
+    container:
+      image: alpine:latest
+      options: --user root # Important for file permissions
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set Day
       id: set-day
       run: |
@@ -36,7 +40,7 @@ jobs:
         # Pad single-digit days with zero
         FORMATTED_DAY=$(printf "%02d" $DAY)
         echo "day=$FORMATTED_DAY" >> $GITHUB_OUTPUT
-    
+
     - name: Determine Input Type
       id: input-type
       run: |
@@ -47,7 +51,7 @@ jobs:
         else
           echo "type=actual" >> $GITHUB_OUTPUT
         fi
-    
+
     - name: Fetch Puzzle Input
       env:
         AOC_INPUT_TYPE: ${{ steps.input-type.outputs.type }}
@@ -65,7 +69,7 @@ jobs:
             --cookie "session=$AOC_SESSION" \
             > day$AOC_DAY/input.txt
         fi
-    
+
     - name: Install SQLite
       run: sudo apt-get update && sudo apt-get install -y sqlite3
 
@@ -99,7 +103,6 @@ jobs:
         cd day$AOC_DAY
 
         echo "Importing input."
-        cat input.txt
 
         sqlite3 solution.db < <(echo ".import input.txt input")
     
@@ -111,6 +114,5 @@ jobs:
         cd day$AOC_DAY
 
         echo "Running solve.sql against solution.db"
-        
-        echo "Running sqlite"
+
         sqlite3 solution.db ".read solve.sql"
